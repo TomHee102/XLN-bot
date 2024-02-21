@@ -1,0 +1,169 @@
+﻿@page "/support"
+
+@using Microsoft.Bot.Connector.DirectLine
+@using System.Threading.Tasks
+@using Azure;
+@using Microsoft.Bot.Connector;
+@using Microsoft.Bot.Connector.Authentication;
+@using System;
+
+<PageTitle>Index</PageTitle>
+
+<div>
+<h1>Support Service</h1>
+
+<br />
+
+<div id="chatContainer" style="height: 300px; overflow-y: auto;">
+    @foreach (var message in messages)
+    {
+        string[] tokens = message.Split(":");
+        if (tokens[0] == "Bot")
+        {
+            <div class="from">@tokens[1]</div>
+        }
+        else
+        {
+            <div class="to">@tokens[1]</div>
+        }
+            
+        <br />
+    }
+</div>
+
+<input type="text" @bind="userMessage" />
+    <button @onclick="SendMessage">send</button>
+</div>
+
+@code {
+
+    string directLineSecret = "DHE17RiKHgA.fr3JBNMqPjL6enHcZ_FXnAtnJCB-T0RATs7eN8mka3E";
+    string botEndpoint = "https://XLN-bot-eeda.azurewebsites.net/api/messages";
+    string userMessage = "";
+    List<string> messages = new List<string>();
+    DirectLineClient client;
+    Conversation conversation;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            client = new DirectLineClient(directLineSecret);
+            conversation = await client.Conversations.StartConversationAsync();
+
+            if (conversation != null)
+            {
+                Console.WriteLine($"Conversation initialized. ID: {conversation.ConversationId}");
+                // Start receiving messages from the bot
+                _ = Task.Run(async () => await ReceiveMessages());
+            }
+            else
+            {
+                Console.WriteLine("Failed to initialize conversation.");
+                // Handle the error or provide user feedback as needed
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while initializing: {ex.Message}");
+            // Handle the error or provide user feedback as needed
+        }
+
+        //Initial event 'ping' in order to recieve welcome message
+        await client.Conversations.PostActivityAsync(conversation.ConversationId, new Activity
+            {
+                From = new ChannelAccount("User"),
+                Text = "",
+                Type = ActivityTypes.Event
+            });
+    }
+
+    async Task SendMessage()
+    {
+        try
+        {
+            Console.WriteLine("SendMessage method invoked."); // Debug message
+
+            if (string.IsNullOrWhiteSpace(userMessage))
+            {
+                Console.WriteLine("User message is empty or whitespace."); // Debug message
+                return;
+            }
+
+            messages.Add($"You: {userMessage}");
+
+            if (conversation == null)
+            {
+                conversation = await client.Conversations.StartConversationAsync();
+            }
+
+            if (conversation != null)
+            {
+                Console.WriteLine($"Sending message: '{userMessage}'"); // Debug message
+                await client.Conversations.PostActivityAsync(conversation.ConversationId, new Activity
+                    {
+                        From = new ChannelAccount("User"),
+                        Text = userMessage,
+                        Type = ActivityTypes.Message
+                    });
+            }
+            else
+            {
+                Console.WriteLine("Conversation is still not initialized."); // Debug message
+
+            }
+
+            userMessage = ""; // Clear the input field after sending
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while sending the message: {ex.Message}"); // Log error
+
+        }
+    }
+
+    async Task ReceiveMessages()
+    {
+        Console.WriteLine("ReceiveMessages method invoked."); // Debug message
+        try
+        {
+            if (conversation == null)
+            {
+                // If conversation is not initialized, start a new one
+                conversation = await client.Conversations.StartConversationAsync();
+            }
+
+            var watermark = "";
+            while (true)
+            {
+                var activities = await client.Conversations.GetActivitiesAsync(conversation.ConversationId, watermark);
+                watermark = activities.Watermark;
+
+                foreach (var activity in activities.Activities)
+                {
+                    if (activity.From.Name == "XLN-bot" && activity.Type == ActivityTypes.Message)
+                    {
+                        //Add the bot's message to the messages list immediately
+                        AddBotMessage(activity.Text);
+                    }
+                }
+
+                //Updates ui
+                StateHasChanged();
+
+
+                // await Task.Delay(0);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while receiving messages: {ex.Message}");
+            // Handle the error or provide user feedback as needed
+        }
+    }
+
+    void AddBotMessage(string message)
+    {
+        messages.Add($"Bot: {message}");
+    }
+}
