@@ -11,25 +11,25 @@
 
 <PageTitle>Support</PageTitle>
 <div class="appContainer">
-<div class="chatContainer" style="height: 375px; overflow-y: auto;">
-<h1><img src="XLN-logo.png" /></h1>
-    @foreach (var message in messages)
-    {
-        string[] tokens = message.Split(":");
-        if (tokens[0] == "Bot")
+    <div class="chatContainer" style="height: 375px; overflow-y: auto;">
+        <h1><img src="XLN-logo.png" /></h1>
+        @foreach (var message in messages)
         {
-            <div class="from">@tokens[1]</div>
+            string[] tokens = message.Split(":");
+            if (tokens[0] == "Bot")
+            {
+                <div class="from">@tokens[1]</div>
+            }
+            else
+            {
+                <div class="to">@tokens[1]</div>
+            }
+
+            <br />
         }
-        else
-        {
-            <div class="to">@tokens[1]</div>
-        }
-            
-        <br />
-    }
-</div>
-<input type="text" @bind="userMessage" />
-<button @onclick="SendMessage"><i class="fa fa-send"></i></button>
+    </div>
+    <input type="text" @bind="userMessage" />
+    <button @onclick="SendMessage"><i class="fa fa-send"></i></button>
 </div>
 
 @code {
@@ -165,3 +165,4 @@
         messages.Add($"Bot: {message}");
     }
 }
+
