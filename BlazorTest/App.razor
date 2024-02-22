@@ -10,29 +10,42 @@
 @using System;
 
 <PageTitle>Support</PageTitle>
-<div class="appContainer">
-<div class="chatContainer" style="height: 375px; overflow-y: auto;">
-<h1><img src="XLN-logo.png" /></h1>
-    @foreach (var message in messages)
-    {
-        string[] tokens = message.Split(":");
-        if (tokens[0] == "Bot")
-        {
-            <div class="from">@tokens[1]</div>
-        }
-        else
-        {
-            <div class="to">@tokens[1]</div>
-        }
-            
-        <br />
-    }
-</div>
-<input type="text" @bind="userMessage" />
-<button @onclick="SendMessage"><i class="fa fa-send"></i></button>
+<div class="appPosition">
+    <div class="appContainer">
+        <h1><img src="XLN-logo.png" /></h1>
+        <div class="chatContainer" style="height: 375px; overflow-y: auto;">
+            @foreach (var message in messages)
+            {
+                string[] tokens = message.Split(":");
+                if (tokens[0] == "Bot")
+                {
+                    <div class="from">@tokens[1]</div>
+                }
+                else
+                {
+                    <div class="to">@tokens[1]</div>
+                }
+
+                <br />
+            }
+        </div>
+        <input type="text" @bind="userMessage" />
+        <button @onclick="SendMessage"><i class="fa fa-send"></i></button>
+    </div>
 </div>
 
 @code {
+    //popup logic
+    public bool _isOpen;
+
+    public void ToggleOpen()
+    {
+        if (_isOpen)
+            _isOpen = false;
+        else
+            _isOpen = true;
+    }
+
 
     string directLineSecret = "DHE17RiKHgA.fr3JBNMqPjL6enHcZ_FXnAtnJCB-T0RATs7eN8mka3E";
     string botEndpoint = "https://XLN-bot-eeda.azurewebsites.net/api/messages";
