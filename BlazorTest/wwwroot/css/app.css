@@ -1,14 +1,14 @@
 ﻿@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
 
-h1 {
+h1{
     text-align: center;
 }
 
-body {
+body{
     font-family: sans-serif;
 }
 
-img {
+img{
     margin: 5px;
     height: 75px;
     width: auto;
@@ -88,7 +88,8 @@ button {
     position: relative;
     top: 10px;
     height: auto;
-    width: 98%;
+    max-height: 90%;
+    width: 90%;
     margin: auto;
     color: black;
     border-radius: 15px;
@@ -101,4 +102,18 @@ button {
     right: 5px;
     height: 70%;
     width: 20%;
+}
+
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    visibility: hidden;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #389ACF;
+    border-radius: 15px;
 }
