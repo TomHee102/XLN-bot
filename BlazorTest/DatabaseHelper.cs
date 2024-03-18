@@ -5,13 +5,13 @@ using System.IO;
 
 public static class DatabaseHelper
 {
-    private static string connectionString = @"Data Source= ..\..\Files\XLN-bot\SQLite_XLN_chatlogs.db;Version=3";
+    private static string connectionString = @"Data Source= ..\BlazorTest\Files\SQLite_XLN_chatlogs.db;Version=3";
 
-    public static void InitializeDatabase()
+    public static string InitializeDatabase()
     {
-        if (!File.Exists(@"..\..\Files\XLN-bot\SQLite_XLN_chatlogs.db"))
+        if (!File.Exists(@"..\BlazorTest\Files\SQLite_XLN_chatlogs.db"))
         {
-            SQLiteConnection.CreateFile(@"..\..\Files\XLN-bot\SQLite_XLN_chatlogs.db");
+            SQLiteConnection.CreateFile(@"..\BlazorTest\Files\SQLite_XLN_chatlogs.db");
 
             using (var connection = new SQLiteConnection(connectionString))
             {
@@ -33,8 +33,13 @@ public static class DatabaseHelper
                 {
                     command.CommandText = createChatlogsTableQuery;
                     command.ExecuteNonQuery();
+                    return ("Database created");
                 }
             }
+        }
+        else
+        {
+            return ("Databse already exists");
         }
     }
 }

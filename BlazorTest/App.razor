@@ -9,6 +9,7 @@
 @using Microsoft.Bot.Connector.Authentication;
 @using System;
 @using System.Data.SQLite;
+@DatabaseHelper.InitializeDatabase();
 
 
 <PageTitle>Support</PageTitle>
@@ -39,7 +40,7 @@
 </div>
 
 @code {
-    string InitializeDatabase() { };
+
     //popup logic
     public bool _isOpen;
 
@@ -226,6 +227,5 @@
         {
             return("DATABASE ALREADY EXISTS");
         }
-        return ("error");
     }
 }
