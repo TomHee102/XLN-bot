@@ -7,7 +7,7 @@ public static class DatabaseHelper
 {
     private static string connectionString = @"Data Source= ..\..\Files\XLN-bot\SQLite_XLN_chatlogs.db;Version=3";
 
-    public static void InitializeDatabse()
+    public static void InitializeDatabase()
     {
         if (!File.Exists(@"..\..\Files\XLN-bot\SQLite_XLN_chatlogs.db"))
         {

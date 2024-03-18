@@ -10,11 +10,13 @@
 @using System;
 @using System.Data.SQLite;
 
+
 <PageTitle>Support</PageTitle>
 <div class="appPosition">
     <div class="appContainer">
     <h1><img src="XLN-logo.png" /></h1>
         <div class="chatContainer" style="max-height: 375px; overflow-y: auto;">
+
 
             @foreach (var message in messages)
             {
@@ -37,6 +39,7 @@
 </div>
 
 @code {
+    string InitializeDatabase() { };
     //popup logic
     public bool _isOpen;
 
@@ -182,44 +185,47 @@
 
 
     //DATABASE CODE - ALIX
-    
+
 
     //tutorial by Rory Mulcahey used: https://www.youtube.com/watch?v=7TpljNN0IvA
 
-    public static class DatabaseHelper
-        {
-        private static string connectionString = @"Data Source= ..\..\Files\XLN-bot\SQLite_XLN_chatlogs.db;Version=3";
 
-        public static void InitializeDatabse()
+    private static string connectionString = @"Data Source= ..\Files\XLN-bot\SQLite_XLN_chatlogs.db;Version=3";
+
+    public static string InitializeDatabase()
+    {
+        if (!File.Exists(@"..\Files\XLN-bot\SQLite_XLN_chatlogs.db"))
         {
-            if (!File.Exists(@"..\..\Files\XLN-bot\SQLite_XLN_chatlogs.db"))
+            SQLiteConnection.CreateFile(@"..\Files\XLN-bot\SQLite_XLN_chatlogs.db");
+
+            using (var connection = new SQLiteConnection(connectionString))
             {
-                SQLiteConnection.CreateFile(@"..\..\Files\XLN-bot\SQLite_XLN_chatlogs.db");
+                connection.Open();
 
-                using (var connection = new SQLiteConnection(connectionString))
+                string createChatlogsTableQuery = @"
+                    CREATE TABLE IF NOT EXISTS Chatlogs (
+	                    ItemID INTEGER NOT NULL UNIQUE,
+	                    ConversationID INTEGER NOT NULL,
+	                    Username TEXT,
+	                    IssueID INTEGER,
+	                    Message TEXT,
+	                    TimeSent TEXT NOT NULL,
+	                    IssueSolved INTEGER,
+	                    PRIMARY KEY(ItemID AUTOINCREMENT)
+                    )";
+
+                using (var command = new SQLiteCommand(connection))
                 {
-                    connection.Open();
-
-                    string createChatlogsTableQuery = @"
-                        CREATE TABLE IF NOT EXISTS Chatlogs (
-	                        ItemID INTEGER NOT NULL UNIQUE,
-	                        ConversationID INTEGER NOT NULL,
-	                        Username TEXT,
-	                        IssueID INTEGER,
-	                        Message TEXT,
-	                        TimeSent TEXT NOT NULL,
-	                        IssueSolved INTEGER,
-	                        PRIMARY KEY(ItemID AUTOINCREMENT)
-                        )";
-
-                    using (var command = new SQLiteCommand(connection))
-                    {
-                        command.CommandText = createChatlogsTableQuery;
-                        command.ExecuteNonQuery();
-                    }
+                    command.CommandText = createChatlogsTableQuery;
+                    command.ExecuteNonQuery();
                 }
+                return ("Database created");
             }
         }
+        else
+        {
+            return("DATABASE ALREADY EXISTS");
+        }
+        return ("error");
     }
-
 }
