@@ -2,54 +2,72 @@
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
-@using Microsoft.Bot.Connector.DirectLine
-@using System.Threading.Tasks
-@using Azure;
-@using Microsoft.Bot.Connector;
-@using Microsoft.Bot.Connector.Authentication;
-@using System;
 
 <PageTitle>Support</PageTitle>
-<div class="appPosition">
-    <div class="appContainer">
-    <h1><img src="XLN-logo.png" /></h1>
-        <div class="chatContainer" style="max-height: 375px; overflow-y: auto;">
 
-            @foreach (var message in messages)
-            {
-                string[] tokens = message.Split(":");
-                if (tokens[0] == "Bot")
-                {
-                    <div class="from">@tokens[1]</div>
-                }
-                else
-                {
-                    <div class="to">@tokens[1]</div>
-                }
-                    
-                <br />
-            }
+<div>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
+    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
+    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
+    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. 
+    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+    Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+</div>
+
+<div id="popupButton" style="cursor: pointer;" @onclick="TogglePopup">
+    <img src="circle.png" alt="Popup Button" width="50" height="50" />
+</div>
+
+<div id="popupContainer" style="display: @popupDisplay;">
+    <div id="popupContent">
+        <div class="appPosition">
+            <div class="appContainer">
+                <h1><img src="XLN-logo.png" /></h1>
+                <div class="chatContainer" style="max-height: 375px; overflow-y: auto;">
+
+                    @foreach (var message in messages)
+                    {
+                        string[] tokens = message.Split(":");
+                        if (tokens[0] == "Bot")
+                        {
+                            <div class="from">@tokens[1]</div>
+                        }
+                        else
+                        {
+                            <div class="to">@tokens[1]</div>
+                        }
+
+                        <br />
+                    }
+                </div>
+                <input type="text" @bind="userMessage" />
+                <button @onclick="SendMessage"><i class="fa fa-send"></i></button>
+            </div>
         </div>
-        <input type="text" @bind="userMessage" />
-        <button @onclick="SendMessage"><i class="fa fa-send"></i></button>
+        <iframe id="chatFrame" src="" style="width: 100%; height: 100%; border: none;"></iframe>
     </div>
 </div>
 
 @code {
     //popup logic
-    public bool _isOpen;
+    private string popupDisplay = "none";
 
-    public void ToggleOpen()
+    private void TogglePopup()
     {
-        if (_isOpen)
-            _isOpen = false;
-        else
-            _isOpen = true;
+        popupDisplay = (popupDisplay == "none") ? "block" : "none";
+        if (popupDisplay == "block")
+        {
+            // Optionally, perform any actions when the popup is opened
+            // For example, setting the iframe source
+            // chatFrameSrc = "/chat";
+        }
     }
 
-
-    string directLineSecret = "DHE17RiKHgA.fr3JBNMqPjL6enHcZ_FXnAtnJCB-T0RATs7eN8mka3E";
-    string botEndpoint = "https://XLN-bot-eeda.azurewebsites.net/api/messages";
+    string directLineSecret = "qJTEYGkNoZw.1OD_Rw_WNWBNikoWudYw_NEmEOaPMz3BJuUWexKwifk";
+    string botEndpoint = "https://xlnbotlangauge-bot-6838.azurewebsites.net/api/messages";
     string userMessage = "";
     List<string> messages = new List<string>();
     DirectLineClient client;
@@ -152,7 +170,7 @@
 
                 foreach (var activity in activities.Activities)
                 {
-                    if (activity.From.Name == "XLN-bot" && activity.Type == ActivityTypes.Message)
+                    if (activity.From.Name == "XLNBotLangauge-bot" && activity.Type == ActivityTypes.Message)
                     {
                         //Add the bot's message to the messages list immediately
                         AddBotMessage(activity.Text);
