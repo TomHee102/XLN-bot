@@ -4,7 +4,7 @@
 
 //Declaring database and db variable
 $db = NULL;
-$dbfilename = '..\XLN-bot\BlazorTest\SQLite_XLN_chatlogs.db';
+$dbfilename = '..\XLN-bot\BlazorTest\Files\SQLite_XLN_chatlogs.db';
 
 //Opens the database the parameters are to avoid sql injections where a function is only outputing, not changing.
 function OpenDB($mode=(SQLITE3_OPEN_READWRITE|SQLITE3_OPEN_CREATE))
