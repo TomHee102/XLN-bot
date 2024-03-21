@@ -26,7 +26,7 @@ function ResetDB()
     global $db;
     OpenDB();
     $db->exec('DROP TABLE IF EXISTS "Chatlogs"');
-    $db->exec('CREATE TABLE "Chatlogs" ( "ItemID" INTEGER NOT NULL UNIQUE, "ConversationID" INTEGER NOT NULL, "Username" TEXT NOT NULL, "IssueID" INTEGER, "Message" TEXT, "TimeSent" TEXT NOT NULL, "IssueSolved" INTEGER, PRIMARY KEY("ItemID" AUTOINCREMENT) )');
+    $db->exec('CREATE TABLE "Chatlogs" ( "ItemID" INTEGER NOT NULL UNIQUE, "ConversationID" TEXT NOT NULL, "Username" TEXT NOT NULL, "IssueID" INTEGER, "Message" TEXT, "TimeSent" TEXT NOT NULL, "IssueSolved" INTEGER, PRIMARY KEY("ItemID" AUTOINCREMENT) )');
     CloseDB();
 }
 
@@ -43,7 +43,7 @@ function InsertData($ConversationID, $Username, $IssueID, $Message, $IssueSolved
     $stmt = $db->prepare($sql); //prepare the sql statement
 
     //give the values for the parameters
-    $stmt->bindParam(':Convid', $ConversationID, SQLITE3_INTEGER);
+    $stmt->bindParam(':Convid', $ConversationID, SQLITE3_TEXT);
     $stmt->bindParam(':Uname', $Username, SQLITE3_TEXT); 
     $stmt->bindParam(':Issueid', $IssueID, SQLITE3_INTEGER);
     $stmt->bindParam(':Msg', $Message, SQLITE3_TEXT);
@@ -60,7 +60,7 @@ function InsertData($ConversationID, $Username, $IssueID, $Message, $IssueSolved
         return "Error: something went wrong :(";
     }
 }
-
+/*
 //Get the last conversation ID to know what the next convo ID will be. called only once.
 function GetNewConvoID()
 {  
@@ -84,7 +84,7 @@ function GetNewConvoID()
 
     return $NewConvoID; //CALL AT START OF EACH USE OF BOT TO START NEW ID
 }
-
+*/
 
 
 
