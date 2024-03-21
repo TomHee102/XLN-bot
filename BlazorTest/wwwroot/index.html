@@ -1,3 +1,7 @@
+
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -12,6 +16,15 @@
 </head>
 
 <body>
+
+    <script>
+        window.scrollToBottom = function () {
+            console.log("Function called");
+            var chatContainer = document.getElementById("chatContainer");
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        };
+    </script>
+
     <div id="app">Loading...</div>
 
     <!--<div id="blazor-error-ui">

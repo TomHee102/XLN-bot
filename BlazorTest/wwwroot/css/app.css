@@ -1,14 +1,14 @@
 ﻿@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
 
-h1{
+h1 {
     text-align: center;
 }
 
-body{
+body {
     font-family: sans-serif;
 }
 
-img{
+img {
     margin: 5px;
     height: 75px;
     width: auto;
@@ -79,6 +79,7 @@ button {
     margin: 5px;
 }
 
+
 .appHeader {
     position: fixed;
     max-width: 250px;
@@ -114,7 +115,7 @@ button {
 }
 
 .inputContainer {
-   overflow: hidden;
+    overflow: hidden;
 }
 
 ::-webkit-scrollbar {

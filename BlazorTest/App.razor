@@ -1,9 +1,24 @@
-﻿@page "/support"
+﻿@inject IJSRuntime JSRuntime
+@page "/support"
 <link rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
 
 <PageTitle>Support</PageTitle>
+
+@foreach(var log in logs)
+{
+    <p>
+        <b>*@log.ItemID </b>
+        <b>*@log.ConversationID </b>
+        <b>*@log.IssueID </b>
+        <b>*@log.Message </b>
+        <b>*@log.TimeSent </b>
+        <b>*@log.IssueSolved </b>
+
+    </p>
+}
+
 
 <div id="popupButton" style="cursor: pointer;" @onclick="TogglePopup">
     <img src="circle.png" alt="Popup Button" width="50" height="50" />
@@ -14,41 +29,45 @@
         <div class="appPosition">
             <div class="appContainer">
                 <h1><img src="XLN-logo.png" /></h1>
-                <div class="chatContainer" style="max-height: 375px; overflow-y: scroll;">
+                <div class="chatContainer" id="chatContainer" style="max-height: 375px; overflow-y: auto;">
+
 
                     @foreach (var message in messages)
                     {
                         string[] tokens = message.Split(";");
                         if (tokens[0] == "Bot")
                         {
-                            <div class="from messageContainer">@tokens[1]</div>
-                                for (int i = 2; i < tokens.Count(); i++)
-                                {
-                                    <div><button class="prompt messageContainer">@tokens[i]</button></div>
-                                }
+                                    <div class="messageContainer from">@tokens[1]</div>
+                                    for (int i = 2; i < tokens.Count(); i++)
+                                    {
+                                        <div><button class="prompt messageContainer">@tokens[i]</button></div>
+                                    }
                         }
                         else
                         {
-                            <div class="to messageContainer">@tokens[1]</div>
+                                    <div class="messageContainer to">@tokens[1]</div>
                         }
 
                         <br />
                     }
                 </div>
-                <div class="inputContainer">
-                   <input type="text" @bind="userMessage" @onkeyup="HandleKeyPress"/>
-                   <button @onclick="SendMessage"><i class="fa fa-send"></i></button>
-                </div>
+                <input type="text" @bind="userMessage" @onkeyup="HandleKeyPress"/>
+                <button @onclick="SendMessage"><i class="fa fa-send"></i></button>
             </div>
         </div>
         <iframe id="chatFrame" src="" style="width: 100%; height: 100%; border: none;"></iframe>
     </div>
 </div>
 
+
+
 @code {
+
+
     //popup logic
     private string popupDisplay = "none";
-
+    int issueID;
+    int issueSolved = 0;
     private void TogglePopup()
     {
         popupDisplay = (popupDisplay == "none") ? "block" : "none";
@@ -69,6 +88,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await this.refreshlist(); 
         try
         {
             client = new DirectLineClient(directLineSecret);
@@ -114,7 +134,12 @@
             }
 
             messages.Add($"You;{userMessage}");
-            // update sql here
+
+            if (!string.IsNullOrWhiteSpace(userMessage))
+            {
+                InsertLogsFromChatbot(userMessage, "User", issueID, issueSolved);
+            }
+
 
             if (conversation == null)
             {
@@ -130,6 +155,7 @@
                         Text = userMessage,
                         Type = ActivityTypes.Message
                     });
+
             }
             else
             {
@@ -138,6 +164,8 @@
             }
 
             userMessage = ""; // Clear the input field after sending
+            await JSRuntime.InvokeVoidAsync("scrollToBottom");
+
         }
         catch (Exception ex)
         {
@@ -165,23 +193,59 @@
 
                 foreach (var activity in activities.Activities)
                 {
-                    if (activity.From.Name == "XLNBotLangauge-bot" && activity.Type == ActivityTypes.Message)
+                    if (activity.Type == ActivityTypes.Message)
                     {
-                        //Add the bot's message to the messages list immediately
-                        if (activity.Text == "Did you mean:")
+                        if (activity.From.Name == "XLNBotLangauge-bot")
                         {
-                            AddBotMessage("Sorry I don't understand can you rephrase it.");
+                            // Add the bot's message to the messages list
+                            if (activity.Text == "Did you mean:")
+                            {
+                                AddBotMessage("Sorry I don't understand can you rephrase it.");
+                            }
+                            else
+                            {
+                                string[] tokens = activity.Text.Split("+");
+                                if (tokens.Count() == 2)
+                                {
+                                    
+                                    if (tokens[1] == "3")
+                                    {
+                                        issueSolved = 1;
+                                    }
+                                    else
+                                    {
+                                        issueID = int.Parse(tokens[1]);
+                                        issueSolved = 0;
+                                    }
+                                }
+                                if (tokens[0].Contains("[conversationID]"))
+                                {
+                                    tokens[0] = tokens[0].Replace("[conversationID]", conversation.ConversationId);
+                                }
+                                AddBotMessage(tokens[0]);
+                            }
                         }
-                        else
-                        {
-                            AddBotMessage(activity.Text);
-                        }
+
                     }
+
+           
+
+
+                    if (!string.IsNullOrWhiteSpace(activity.Text) && activity.From.Name == "XLNBotLangauge-bot")
+                    {
+                        InsertLogsFromChatbot(activity.Text, "Bot", issueID, issueSolved);
+                    }
+
+ 
+
+
                 }
+
+
 
                 //Updates ui
                 StateHasChanged();
-
+                await JSRuntime.InvokeVoidAsync("scrollToBottom");
 
                 // await Task.Delay(0);
                 await Task.Delay(3000);
@@ -196,19 +260,77 @@
 
     void AddBotMessage(string message)
     {
-        if (message.Contains("[conversationID]"))
-        {
-            message = message.Replace("[conversationID]",conversation.ConversationId);
-        }
+        
         messages.Add($"Bot;{message}");
-        // update sql here
+
     }
 
-    async Task HandleKeyPress(KeyboardEventArgs e)
+
+
+
+    async Task HandleKeyPress (KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            await SendMessage();
+            await SendMessage(); 
         }
     }
+
+    public class Logs
+    {
+        public int ItemID { get; set; }
+        public string ConversationID { get; set; }
+        public string Username { get; set; }
+        public int IssueID { get; set; }
+        public string Message { get; set; }
+        public string TimeSent { get; set; }
+        public int? IssueSolved { get; set; }
+
+    }
+
+    string API_URL = "https://localhost:7268";
+
+    private IEnumerable<Logs> logs = Array.Empty <Logs>();
+
+    private async Task refreshlist()
+    {
+        HttpClient httpClient = new HttpClient();
+        HttpResponseMessage response = await httpClient.GetAsync(API_URL + "/api/chatlogs/GetLogs");
+        httpClient.Dispose();
+        using var responseStream = await response.Content.ReadAsStreamAsync();
+        logs = await JsonSerializer.DeserializeAsync<IEnumerable<Logs>>(responseStream);
+    }
+
+
+    private async Task InsertLogsFromChatbot(string message, string username, int issueid, int issueSolved)
+    {
+        
+        Logs log = new Logs
+            {
+                ConversationID = conversation.ConversationId, 
+                Username = username, 
+                IssueID = issueid, 
+                Message = message, 
+                TimeSent = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), 
+                IssueSolved = issueSolved
+            };
+
+        // Call backend API to insert logs
+        HttpClient httpClient = new HttpClient();
+        HttpResponseMessage response = await httpClient.PostAsJsonAsync(API_URL + "/api/chatlogs/InsertLogs", log);
+
+        // Handle response if needed
+        if (response.IsSuccessStatusCode)
+        {   
+            // Log successful insertion or handle accordingly
+            Console.WriteLine("Logs inserted successfully.");
+        }
+        else
+        {
+            // Handle failure
+            Console.WriteLine("Failed to insert logs.");
+        }
+    }
+
+    
 }
