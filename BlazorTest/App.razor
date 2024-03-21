@@ -1,0 +1,293 @@
+﻿@inject IJSRuntime JSRuntime
+@page "/support"
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+
+<PageTitle>Support</PageTitle>
+
+@foreach(var log in logs)
+{
+    <p>
+        <b>*@log.ItemID </b>
+        <b>*@log.ConversationID </b>
+        <b>*@log.IssueID </b>
+        <b>*@log.Message </b>
+        <b>*@log.TimeSent </b>
+        <b>*@log.IssueSolved </b>
+
+    </p>
+}
+
+
+<div id="popupButton" style="cursor: pointer;" @onclick="TogglePopup">
+    <img src="circle.png" alt="Popup Button" width="50" height="50" />
+</div>
+
+<div id="popupContainer" style="display: @popupDisplay;">
+    <div id="popupContent">
+        <div class="appPosition">
+            <div class="appContainer">
+                <h1><img src="XLN-logo.png" /></h1>
+                <div class="chatContainer" id="chatContainer" style="max-height: 375px; overflow-y: auto;">
+
+
+                    @foreach (var message in messages)
+                    {
+                        string[] tokens = message.Split(";");
+                        if (tokens[0] == "Bot")
+                        {
+                                    <div class="messageContainer from">@tokens[1]</div>
+                        }
+                        else
+                        {
+                                    <div class="messageContainer to">@tokens[1]</div>
+                        }
+
+                        <br />
+                    }
+                </div>
+                <input type="text" @bind="userMessage" @onkeyup="HandleKeyPress"/>
+                <button @onclick="SendMessage"><i class="fa fa-send"></i></button>
+            </div>
+        </div>
+        <iframe id="chatFrame" src="" style="width: 100%; height: 100%; border: none;"></iframe>
+    </div>
+</div>
+
+
+
+@code {
+
+
+    //popup logic
+    private string popupDisplay = "none";
+
+    private void TogglePopup()
+    {
+        popupDisplay = (popupDisplay == "none") ? "block" : "none";
+        if (popupDisplay == "block")
+        {
+            // Optionally, perform any actions when the popup is opened
+            // For example, setting the iframe source
+            // chatFrameSrc = "/chat";
+        }
+    }
+
+    string directLineSecret = "qJTEYGkNoZw.1OD_Rw_WNWBNikoWudYw_NEmEOaPMz3BJuUWexKwifk";
+    string botEndpoint = "https://xlnbotlangauge-bot-6838.azurewebsites.net/api/messages";
+    string userMessage = "";
+    List<string> messages = new List<string>();
+    DirectLineClient client;
+    Conversation conversation;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await this.refreshlist(); 
+        try
+        {
+            client = new DirectLineClient(directLineSecret);
+            conversation = await client.Conversations.StartConversationAsync();
+
+            if (conversation != null)
+            {
+                Console.WriteLine($"Conversation initialized. ID: {conversation.ConversationId}");
+                // Start receiving messages from the bot
+                _ = Task.Run(async () => await ReceiveMessages());
+            }
+            else
+            {
+                Console.WriteLine("Failed to initialize conversation.");
+                // Handle the error or provide user feedback as needed
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while initializing: {ex.Message}");
+            // Handle the error or provide user feedback as needed
+        }
+
+        //Initial event 'ping' in order to recieve welcome message
+        await client.Conversations.PostActivityAsync(conversation.ConversationId, new Activity
+            {
+                From = new ChannelAccount("User"),
+                Text = "",
+                Type = ActivityTypes.Event
+            });
+    }
+
+    async Task SendMessage()
+    {
+        try
+        {
+            Console.WriteLine("SendMessage method invoked."); // Debug message
+
+            if (string.IsNullOrWhiteSpace(userMessage))
+            {
+                Console.WriteLine("User message is empty or whitespace."); // Debug message
+                return;
+            }
+
+            messages.Add($"You;{userMessage}");
+
+            if (conversation == null)
+            {
+                conversation = await client.Conversations.StartConversationAsync();
+            }
+
+            if (conversation != null)
+            {
+                Console.WriteLine($"Sending message: '{userMessage}'"); // Debug message
+                await client.Conversations.PostActivityAsync(conversation.ConversationId, new Activity
+                    {
+                        From = new ChannelAccount("User"),
+                        Text = userMessage,
+                        Type = ActivityTypes.Message
+                    });
+            }
+            else
+            {
+                Console.WriteLine("Conversation is still not initialized."); // Debug message
+
+            }
+
+            userMessage = ""; // Clear the input field after sending
+            await JSRuntime.InvokeVoidAsync("scrollToBottom");
+
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while sending the message: {ex.Message}"); // Log error
+
+        }
+    }
+
+    async Task ReceiveMessages()
+    {
+        Console.WriteLine("ReceiveMessages method invoked."); // Debug message
+        try
+        {
+            if (conversation == null)
+            {
+                // If conversation is not initialized, start a new one
+                conversation = await client.Conversations.StartConversationAsync();
+            }
+
+            var watermark = "";
+            while (true)
+            {
+                var activities = await client.Conversations.GetActivitiesAsync(conversation.ConversationId, watermark);
+                watermark = activities.Watermark;
+
+                foreach (var activity in activities.Activities)
+                {
+                    if (activity.Type == ActivityTypes.Message)
+                    {
+                        if (activity.From.Name == "XLNBotLangauge-bot")
+                        {
+                            // Add the bot's message to the messages list
+                            AddBotMessage(activity.Text);
+                        }
+                    }
+                    else if(activity.Type == ActivityTypes.Event)
+                    {
+                        if (activity.From.Name == "XLNBotLangauge-bot")
+                        {
+                            AddBotMessage(activity.Type);
+                        }
+                    }
+
+                }
+
+
+
+                //Updates ui
+                StateHasChanged();
+                await JSRuntime.InvokeVoidAsync("scrollToBottom");
+
+                // await Task.Delay(0);
+                await Task.Delay(3000);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"An error occurred while receiving messages: {ex.Message}");
+            // Handle the error or provide user feedback as needed
+        }
+    }
+
+    void AddBotMessage(string message)
+    {
+        messages.Add($"Bot;{message}");
+
+    }
+
+
+
+
+    async Task HandleKeyPress (KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await SendMessage(); 
+        }
+    }
+
+    public class Logs
+    {
+        public int ItemID { get; set; }
+        public string ConversationID { get; set; }
+        public string Username { get; set; }
+        public int IssueID { get; set; }
+        public string Message { get; set; }
+        public string TimeSent { get; set; }
+        public int? IssueSolved { get; set; }
+
+    }
+
+    string API_URL = "https://localhost:7268";
+
+    private IEnumerable<Logs> logs = Array.Empty <Logs>();
+
+    private async Task refreshlist()
+    {
+        HttpClient httpClient = new HttpClient();
+        HttpResponseMessage response = await httpClient.GetAsync(API_URL + "/api/chatlogs/GetLogs");
+        httpClient.Dispose();
+        using var responseStream = await response.Content.ReadAsStreamAsync();
+        logs = await JsonSerializer.DeserializeAsync<IEnumerable<Logs>>(responseStream);
+    }
+
+
+    private async Task InsertLogsFromChatbot()
+    {
+        
+        Logs log = new Logs
+            {
+                ConversationID = conversation.ConversationId, 
+                Username = "Bot", 
+                IssueID = 1, 
+                Message = userMessage, 
+                TimeSent = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), 
+                IssueSolved = 0 
+            };
+
+        // Call backend API to insert logs
+        HttpClient httpClient = new HttpClient();
+        HttpResponseMessage response = await httpClient.PostAsJsonAsync(API_URL + "/api/chatlogs/InsertLogs", log);
+
+        // Handle response if needed
+        if (response.IsSuccessStatusCode)
+        {
+            // Log successful insertion or handle accordingly
+            Console.WriteLine("Logs inserted successfully.");
+        }
+        else
+        {
+            // Handle failure
+            Console.WriteLine("Failed to insert logs.");
+        }
+    }
+
+    
+}

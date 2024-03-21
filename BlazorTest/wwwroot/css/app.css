@@ -1,0 +1,136 @@
+﻿@import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
+
+h1 {
+    text-align: center;
+}
+
+body {
+    font-family: sans-serif;
+}
+
+img {
+    margin: 5px;
+    height: 75px;
+    width: auto;
+}
+
+input {
+    font-size: 12px;
+    border-width: thin;
+    width: 85%;
+    position: absolute;
+    bottom: 5px;
+    border-radius: 15px;
+}
+
+
+button {
+    border: none;
+    border-radius: 15px;
+    background-color: gold;
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+}
+
+.to {
+    font-size: 12px;
+    text-align: right;
+    position: relative;
+    max-width: 230px;
+    background-color: dodgerblue;
+    color: white;
+    border-radius: 15px;
+    padding: 10px;
+    float: right;
+    margin: 5px;
+    overflow-wrap: break-word;
+}
+
+.messageContainer {
+    margin: 5px;
+    overflow-wrap: break-word;
+    clear: both;
+}
+
+.from {
+    font-size: 12px;
+    text-align: left;
+    position: relative;
+    max-width: 230px;
+    background-color: gold;
+    color: black;
+    border-radius: 15px;
+    padding: 10px;
+    float: left;
+    margin: 5px;
+}
+
+.appHeader {
+    position: fixed;
+    max-width: 250px;
+    align-content: center;
+    color: black;
+    border-radius: 15px;
+    padding: 5px;
+}
+
+.appContainer {
+    position: fixed;
+    bottom: 100px;
+    right: 15px;
+    max-height: 400px;
+    max-width: 250px;
+    min-width: 250px;
+    height: 100%;
+    width: 100%;
+    vertical-align: bottom;
+    background: linear-gradient(180deg, rgba(0,164,196,1) 0%, rgba(255,255,255,1) 75%);
+    color: black;
+    border-radius: 15px;
+    padding: 2.5px;
+    box-shadow: 1px 1px 2.5px 0.5px rgba(0,0,0,.8);
+    overflow: hidden;
+    z-index: 9999;
+}
+
+.chatContainer {
+    height: 275px;
+    border-radius: 20px;
+    padding: 2.5px;
+}
+
+.inputContainer {
+    overflow: hidden;
+}
+
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    visibility: hidden;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #389ACF;
+    border-radius: 15px;
+}
+
+#popupButton {
+    vertical-align: bottom;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: rgba(255,255,255,1);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    z-index: 9999;
+}
