@@ -66,6 +66,19 @@ button {
     margin: 5px;
 }
 
+.prompt {
+    font-size: 12px;
+    text-align: left;
+    position: relative;
+    max-width: 25em;
+    background-color: #f5ff82;
+    color: black;
+    border-radius: 15px;
+    padding: 10px;
+    float: left;
+    margin: 5px;
+}
+
 .appHeader {
     position: fixed;
     max-width: 250px;

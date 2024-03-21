@@ -22,6 +22,10 @@
                         if (tokens[0] == "Bot")
                         {
                             <div class="from messageContainer">@tokens[1]</div>
+                                for (int i = 2; i < tokens.Count(); i++)
+                                {
+                                    <div><button class="prompt messageContainer">@tokens[i]</button></div>
+                                }
                         }
                         else
                         {
@@ -164,7 +168,14 @@
                     if (activity.From.Name == "XLNBotLangauge-bot" && activity.Type == ActivityTypes.Message)
                     {
                         //Add the bot's message to the messages list immediately
-                        AddBotMessage(activity.Text);
+                        if (activity.Text == "Did you mean:")
+                        {
+                            AddBotMessage("Sorry I don't understand can you rephrase it.");
+                        }
+                        else
+                        {
+                            AddBotMessage(activity.Text);
+                        }
                     }
                 }
 
@@ -185,6 +196,10 @@
 
     void AddBotMessage(string message)
     {
+        if (message.Contains("[conversationID]"))
+        {
+            message = message.Replace("[conversationID]",conversation.ConversationId);
+        }
         messages.Add($"Bot;{message}");
         // update sql here
     }
