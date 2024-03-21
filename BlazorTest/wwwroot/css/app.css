@@ -37,20 +37,27 @@ button {
     font-size: 12px;
     text-align: right;
     position: relative;
-    max-width: 25em;
+    max-width: 230px;
     background-color: dodgerblue;
     color: white;
     border-radius: 15px;
     padding: 10px;
     float: right;
     margin: 5px;
+    overflow-wrap: break-word;
+}
+
+.messageContainer {
+    margin: 5px;
+    overflow-wrap: break-word;
+    clear: both;
 }
 
 .from {
     font-size: 12px;
     text-align: left;
     position: relative;
-    max-width: 25em;
+    max-width: 230px;
     background-color: gold;
     color: black;
     border-radius: 15px;
@@ -59,19 +66,33 @@ button {
     margin: 5px;
 }
 
-.appHeader {
+.prompt {
+    font-size: 12px;
+    text-align: left;
     position: relative;
+    max-width: 25em;
+    background-color: #f5ff82;
+    color: black;
+    border-radius: 15px;
+    padding: 10px;
+    float: left;
+    margin: 5px;
+}
+
+.appHeader {
+    position: fixed;
     max-width: 250px;
-    vertical-align: bottom;
+    align-content: center;
     color: black;
     border-radius: 15px;
     padding: 5px;
 }
 
 .appContainer {
-    position: relative;
-    bottom: 20px;
-    right: 20px;
+    position: fixed;
+    bottom: 100px;
+    right: 15px;
+    max-height: 400px;
     max-width: 250px;
     min-width: 250px;
     height: 100%;
@@ -82,26 +103,18 @@ button {
     border-radius: 15px;
     padding: 2.5px;
     box-shadow: 1px 1px 2.5px 0.5px rgba(0,0,0,.8);
+    overflow: hidden;
+    z-index: 9999;
 }
 
 .chatContainer {
-    position: relative;
-    top: 10px;
-    height: auto;
-    max-height: 90%;
-    width: 90%;
-    margin: auto;
-    color: black;
-    border-radius: 15px;
+    height: 275px;
+    border-radius: 20px;
     padding: 2.5px;
 }
 
-.appPosition {
-    position: absolute;
-    bottom: 20px;
-    right: 5px;
-    height: 70%;
-    width: 20%;
+.inputContainer {
+   overflow: hidden;
 }
 
 ::-webkit-scrollbar {
@@ -116,4 +129,21 @@ button {
 ::-webkit-scrollbar-thumb {
     background: #389ACF;
     border-radius: 15px;
+}
+
+#popupButton {
+    vertical-align: bottom;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background-color: rgba(255,255,255,1);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    z-index: 9999;
 }
