@@ -6,22 +6,11 @@
 
 <PageTitle>Support</PageTitle>
 
-@foreach(var log in logs)
-{
-    <p>
-        <b>*@log.ItemID </b>
-        <b>*@log.ConversationID </b>
-        <b>*@log.IssueID </b>
-        <b>*@log.Message </b>
-        <b>*@log.TimeSent </b>
-        <b>*@log.IssueSolved </b>
 
-    </p>
-}
 
 
 <div id="popupButton" style="cursor: pointer;" @onclick="TogglePopup">
-    <img src="circle.png" alt="Popup Button" width="50" height="50" />
+    <img src="@GetImageSource()" alt="Popup Button" width="50" height="50" />
 </div>
 
 <div id="popupContainer" style="display: @popupDisplay;">
@@ -29,30 +18,43 @@
         <div class="appPosition">
             <div class="appContainer">
                 <h1><img src="XLN-logo.png" /></h1>
-                <div class="chatContainer" id="chatContainer" style="max-height: 375px; overflow-y: auto;">
+                @if (!userNameEntered)
+                {
+                        <div class="chatContainer" id="chatContainer" style="max-height: 375px; overflow-y: auto;">
+                            <div class="messageContainer from">Hi! Before we get started, could you please enter your name :)</div>
 
-
-                    @foreach (var message in messages)
-                    {
-                        string[] tokens = message.Split(";");
-                        if (tokens[0] == "Bot")
+                        </div>
+                        <div>
+                            <input type="text" @bind="userName" @onkeyup="HandleKeyPress" placeholder="Enter your name" />
+                            <button @onclick="StartConversation"><i class="fa fa-send"></i></button>
+                        </div>
+                }
+                @if (userNameEntered && !userTimedOut)
+                {
+                        <div class="chatContainer" id="chatContainer" style="max-height: 375px; overflow-y: auto;">
+                        @foreach (var message in messages)
                         {
-                                    <div class="messageContainer from">@tokens[1]</div>
-                                    for (int i = 2; i < tokens.Count(); i++)
-                                    {
-                                        <div><button class="prompt messageContainer">@tokens[i]</button></div>
-                                    }
-                        }
-                        else
-                        {
-                                    <div class="messageContainer to">@tokens[1]</div>
+                            string[] tokens = message.Split(";");
+                            if (tokens[0] == "Bot")
+                            {
+                                            <div class="messageContainer from">@tokens[1]</div>
+                                for (int i = 2; i < tokens.Count(); i++)
+                                {
+                                     <div><button class="prompt messageContainer">@tokens[i]</button></div>
+                                }
+                            }
+                            else
+                            {
+                              <div class="messageContainer to">@tokens[1]</div>
+                            }
                         }
 
-                        <br />
-                    }
-                </div>
-                <input type="text" @bind="userMessage" @onkeyup="HandleKeyPress"/>
-                <button @onclick="SendMessage"><i class="fa fa-send"></i></button>
+                    </div>
+                    <div>
+                        <input type="text" @bind="userMessage" @onkeyup="HandleKeyPress" />
+                        <button @onclick="SendMessage"><i class="fa fa-send"></i></button>
+                    </div>
+                }
             </div>
         </div>
         <iframe id="chatFrame" src="" style="width: 100%; height: 100%; border: none;"></iframe>
@@ -61,23 +63,68 @@
 
 
 
+
+
 @code {
 
 
     //popup logic
     private string popupDisplay = "none";
+    private string userName = "";
+    private bool userNameEntered = false;
+    bool isDaisyImage = true;
     int issueID;
     int issueSolved = 0;
+    private TimeSpan timeoutDuration = TimeSpan.FromSeconds(120);
+    private CancellationTokenSource timeoutTokenSource;
+    private DateTime lastUserActivityTime = DateTime.UtcNow;
+    private bool userTimedOut = false;
+    private bool canSendMessage = true;
+    private bool canReceiveMessages = true;
+
+    public string UserName
+    {
+        get { return userName; }
+        set
+        {
+            userName = value;
+            StateHasChanged();
+        }
+    }
+
+    async Task StartConversation()
+    {
+        if (!string.IsNullOrWhiteSpace(userName))
+        {
+            userNameEntered = true;
+            timeoutTokenSource = new CancellationTokenSource();
+            lastUserActivityTime = DateTime.UtcNow;
+            await TimeoutCountdown();
+        }
+        else
+        {
+            // Handle case where user did not enter a name
+        }
+    }
+
+
+    string GetImageSource()
+    {
+        return isDaisyImage ? "Outline Daisy.png" : "Daisy.png";
+    }
+
     private void TogglePopup()
     {
         popupDisplay = (popupDisplay == "none") ? "block" : "none";
+        isDaisyImage = !isDaisyImage;
         if (popupDisplay == "block")
         {
-            // Optionally, perform any actions when the popup is opened
-            // For example, setting the iframe source
-            // chatFrameSrc = "/chat";
+
         }
     }
+
+
+
 
     string directLineSecret = "qJTEYGkNoZw.1OD_Rw_WNWBNikoWudYw_NEmEOaPMz3BJuUWexKwifk";
     string botEndpoint = "https://xlnbotlangauge-bot-6838.azurewebsites.net/api/messages";
@@ -88,7 +135,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await this.refreshlist(); 
+
+        timeoutTokenSource = new CancellationTokenSource();
+        await ReceiveMessages();
+
+        await this.refreshlist();
         try
         {
             client = new DirectLineClient(directLineSecret);
@@ -113,6 +164,7 @@
         }
 
         //Initial event 'ping' in order to recieve welcome message
+        
         await client.Conversations.PostActivityAsync(conversation.ConversationId, new Activity
             {
                 From = new ChannelAccount("User"),
@@ -127,19 +179,21 @@
         {
             Console.WriteLine("SendMessage method invoked."); // Debug message
 
-            if (string.IsNullOrWhiteSpace(userMessage))
+            if (!canSendMessage || string.IsNullOrWhiteSpace(userMessage))
             {
                 Console.WriteLine("User message is empty or whitespace."); // Debug message
                 return;
             }
 
+            // Update the last user activity time whenever a message is sent
+            lastUserActivityTime = DateTime.UtcNow;
+
             messages.Add($"You;{userMessage}");
 
-            if (!string.IsNullOrWhiteSpace(userMessage))
+            if (!canSendMessage || !string.IsNullOrWhiteSpace(userMessage))
             {
-                InsertLogsFromChatbot(userMessage, "User", issueID, issueSolved);
+                InsertLogsFromChatbot(userMessage, userName, issueID, issueSolved);
             }
-
 
             if (conversation == null)
             {
@@ -155,102 +209,114 @@
                         Text = userMessage,
                         Type = ActivityTypes.Message
                     });
-
+                await JSRuntime.InvokeVoidAsync("scrollToBottom");
             }
             else
             {
                 Console.WriteLine("Conversation is still not initialized."); // Debug message
-
             }
 
             userMessage = ""; // Clear the input field after sending
-            await JSRuntime.InvokeVoidAsync("scrollToBottom");
-
         }
         catch (Exception ex)
         {
             Console.WriteLine($"An error occurred while sending the message: {ex.Message}"); // Log error
-
         }
     }
-
     async Task ReceiveMessages()
     {
         Console.WriteLine("ReceiveMessages method invoked."); // Debug message
         try
         {
-            if (conversation == null)
+            while (canReceiveMessages)
             {
-                // If conversation is not initialized, start a new one
-                conversation = await client.Conversations.StartConversationAsync();
-            }
-
-            var watermark = "";
-            while (true)
-            {
-                var activities = await client.Conversations.GetActivitiesAsync(conversation.ConversationId, watermark);
-                watermark = activities.Watermark;
-
-                foreach (var activity in activities.Activities)
+                if (conversation == null)
                 {
-                    if (activity.Type == ActivityTypes.Message)
+                    // If conversation is not initialized, start a new one
+                    conversation = await client.Conversations.StartConversationAsync();
+                }
+
+                var watermark = "";
+                while (true)
+                {
+                    var activities = await client.Conversations.GetActivitiesAsync(conversation.ConversationId, watermark);
+                    watermark = activities.Watermark;
+
+
+
+
+
+                    foreach (var activity in activities.Activities)
                     {
-                        if (activity.From.Name == "XLNBotLangauge-bot")
+                        if (activity.Type == ActivityTypes.Message)
                         {
-                            // Add the bot's message to the messages list
-                            if (activity.Text == "Did you mean:")
+                            if (activity.From.Name == "XLNBotLangauge-bot")
                             {
-                                AddBotMessage("Sorry I don't understand can you rephrase it.");
-                            }
-                            else
-                            {
-                                string[] tokens = activity.Text.Split("+");
-                                if (tokens.Count() == 2)
+                                // Add the bot's message to the messages list
+                                if (activity.Text == "Did you mean:")
                                 {
-                                    
-                                    if (tokens[1] == "3")
-                                    {
-                                        issueSolved = 1;
-                                    }
-                                    else
-                                    {
-                                        issueID = int.Parse(tokens[1]);
-                                        issueSolved = 0;
-                                    }
+                                    AddBotMessage("Sorry I don't understand can you rephrase it.");
                                 }
-                                if (tokens[0].Contains("[conversationID]"))
+                                else
                                 {
-                                    tokens[0] = tokens[0].Replace("[conversationID]", conversation.ConversationId);
+                                    //for getting the prompts to disaply
+                                    string[] tokens = activity.Text.Split("+");
+                                    if (tokens.Count() == 2)
+                                    {
+
+                                        if (tokens[1] == "3")
+                                        {
+                                            issueSolved = 1;
+                                        }
+                                        else
+                                        {
+                                            issueID = int.Parse(tokens[1]);
+                                            issueSolved = 0;
+                                        }
+                                    }
+                                    if (tokens[0].Contains("[conversationID]"))
+                                    {
+                                        tokens[0] = tokens[0].Replace("[conversationID]", conversation.ConversationId);
+                                    }
+                                    if (tokens[0].Contains("[Username]"))
+                                    {
+                                        tokens[0] = tokens[0].Replace("[Username]", userName);
+                                    }
+
+                                    AddBotMessage(tokens[0]);
                                 }
-                                AddBotMessage(tokens[0]);
                             }
+
                         }
 
+
+
+
+                        if (!string.IsNullOrWhiteSpace(activity.Text) && activity.From.Name == "XLNBotLangauge-bot")
+                        {
+                            InsertLogsFromChatbot(activity.Text, "Bot", issueID, issueSolved);
+                            StateHasChanged();
+                            await JSRuntime.InvokeVoidAsync("scrollToBottom");
+                        }
+
+
+
+
                     }
 
-           
 
 
-                    if (!string.IsNullOrWhiteSpace(activity.Text) && activity.From.Name == "XLNBotLangauge-bot")
-                    {
-                        InsertLogsFromChatbot(activity.Text, "Bot", issueID, issueSolved);
-                    }
+                    //Updates ui
+                    StateHasChanged();
 
- 
+
+                    await Task.Delay(1000);
 
 
                 }
-
-
-
-                //Updates ui
-                StateHasChanged();
-                await JSRuntime.InvokeVoidAsync("scrollToBottom");
-
-                // await Task.Delay(0);
-                await Task.Delay(3000);
             }
-        }
+            }
+ 
         catch (Exception ex)
         {
             Console.WriteLine($"An error occurred while receiving messages: {ex.Message}");
@@ -258,21 +324,52 @@
         }
     }
 
+
     void AddBotMessage(string message)
     {
-        
+
         messages.Add($"Bot;{message}");
 
     }
 
 
+    async Task TimeoutCountdown()
+    {
+        while (true)
+        {
+            var elapsed = DateTime.UtcNow - lastUserActivityTime;
+
+            if (elapsed >= timeoutDuration)
+            {
+                Console.WriteLine("Timedout");
+
+                // Display message indicating timeout
+                messages.Add($"Bot;Daisy has timed out! Please refresh the page to continue asking questions.");
+
+                canSendMessage = false;
+                canReceiveMessages = false;
+
+                StateHasChanged();
+                await JSRuntime.InvokeVoidAsync("scrollToBottom");
+                break;
+            }
+
+            await Task.Delay(2000); // Check every second
+        }
+    }
 
 
-    async Task HandleKeyPress (KeyboardEventArgs e)
+
+    async Task HandleKeyPress(KeyboardEventArgs e)
     {
         if (e.Key == "Enter")
         {
-            await SendMessage(); 
+            await SendMessage();
+            if (!userNameEntered)
+            {
+                await StartConversation();
+            }
+
         }
     }
 
@@ -290,7 +387,7 @@
 
     string API_URL = "https://localhost:7268";
 
-    private IEnumerable<Logs> logs = Array.Empty <Logs>();
+    private IEnumerable<Logs> logs = Array.Empty<Logs>();
 
     private async Task refreshlist()
     {
@@ -304,14 +401,14 @@
 
     private async Task InsertLogsFromChatbot(string message, string username, int issueid, int issueSolved)
     {
-        
+
         Logs log = new Logs
             {
-                ConversationID = conversation.ConversationId, 
-                Username = username, 
-                IssueID = issueid, 
-                Message = message, 
-                TimeSent = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"), 
+                ConversationID = conversation.ConversationId,
+                Username = username,
+                IssueID = issueid,
+                Message = message,
+                TimeSent = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
                 IssueSolved = issueSolved
             };
 
@@ -321,7 +418,7 @@
 
         // Handle response if needed
         if (response.IsSuccessStatusCode)
-        {   
+        {
             // Log successful insertion or handle accordingly
             Console.WriteLine("Logs inserted successfully.");
         }
@@ -332,5 +429,4 @@
         }
     }
 
-    
 }

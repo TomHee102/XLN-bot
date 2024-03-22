@@ -25,6 +25,18 @@
         };
     </script>
 
+
+    <script>
+        function ToggleImage() {
+            var img = document.getElementById('popupButtonImg');
+            if (img.src.includes('Outline Daisy.png')) {
+                img.src = 'Daisy.png'; // Change this to the path of your different image
+            } else {
+                img.src = 'Outline Daisy.png'; // Change this to the path of your original image
+            }
+        }
+    </script>
+
     <div id="app">Loading...</div>
 
     <!--<div id="blazor-error-ui">
